@@ -23,8 +23,44 @@
 #include <winpr/json.h>
 #include <winpr/string.h>
 #include <winpr/synch.h>
+#include <winpr/wlog.h>
 
 static HydraSession* g_creating = NULL;
+static char g_last_log[512];
+
+/* OpenSSL remembers the certificate directory from the machine that built it.
+ * That directory is not on any other Mac, so gateway TLS stops and FreeRDP
+ * still reports Success. The system bundle is on every Mac. */
+static void hydra_use_system_ca_bundle(void)
+{
+	if (!getenv("SSL_CERT_FILE"))
+		setenv("SSL_CERT_FILE", "/etc/ssl/cert.pem", 0);
+}
+
+static BOOL hydra_log_message(const wLogMessage* message)
+{
+	if (!message || !message->TextString || message->Level < WLOG_ERROR)
+		return TRUE;
+	snprintf(g_last_log, sizeof(g_last_log), "%s", message->TextString);
+	return TRUE;
+}
+
+static void hydra_capture_freerdp_errors(void)
+{
+	wLog* root = WLog_GetRoot();
+	wLogAppender* appender = NULL;
+	wLogCallbacks callbacks;
+	g_last_log[0] = '\0';
+	if (!root)
+		return;
+	ZeroMemory(&callbacks, sizeof(callbacks));
+	callbacks.message = hydra_log_message;
+	WLog_SetLogLevel(root, WLOG_ERROR);
+	WLog_SetLogAppenderType(root, WLOG_APPENDER_CALLBACK);
+	appender = WLog_GetLogAppender(root);
+	if (appender)
+		WLog_ConfigureAppender(appender, "callbacks", &callbacks);
+}
 
 /* Windows drops a monitor layout that arrives with, or immediately after, the caps PDU. */
 #define HYDRA_RESIZE_DELAY_NS 500000000ull
@@ -900,6 +936,8 @@ static DWORD WINAPI hydra_thread(LPVOID argument)
 		report(session, 0, session->connect_error);
 		return 1;
 	}
+	hydra_use_system_ca_bundle();
+	hydra_capture_freerdp_errors();
 	connected = freerdp_connect(instance);
 	if (!connected)
 	{
@@ -910,9 +948,13 @@ static DWORD WINAPI hydra_thread(LPVOID argument)
 		else if (session->needs_credentials)
 			snprintf(message, sizeof(message),
 			         "This PC requires a user name and password before it will connect.");
+		else if (code != FREERDP_ERROR_SUCCESS && text && text[0])
+			snprintf(message, sizeof(message), "Connection failed (%s)", text);
+		else if (g_last_log[0])
+			snprintf(message, sizeof(message), "Connection failed (%s)", g_last_log);
 		else
-			snprintf(message, sizeof(message), "Connection failed (%s)",
-			         text ? text : "unknown error");
+			snprintf(message, sizeof(message),
+			         "Connection failed. Check the network, and allow Local Network if macOS asks.");
 		report(session, 0, message);
 		return 1;
 	}
@@ -964,6 +1006,7 @@ HydraSession* hydra_session_create(int argc, char** argv, const char* rdp_text, 
 	int index = 0;
 	if (!session)
 		return NULL;
+	hydra_use_system_ca_bundle();
 	pthread_mutex_init(&session->lock, NULL);
 	if (callbacks)
 		session->callbacks = *callbacks;
