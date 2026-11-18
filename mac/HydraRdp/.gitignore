@@ -1,0 +1,10 @@
+# FreeRDP checkout, cmake build, and local install prefix from scripts/build-freerdp.sh.
+# These stay on disk for the app link step and are not source.
+ThirdParty/freerdp-src/
+ThirdParty/freerdp-build/
+ThirdParty/freerdp-install/
+ThirdParty/deps/
+
+# App and session-library build output.
+.build/
+build/

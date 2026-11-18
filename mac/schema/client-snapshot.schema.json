@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://itprocloud.de/hydra/client-snapshot.schema.json",
+  "title": "Hydra Mac client snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "collectorName", "collectedAtUtc"],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "collectorName": {
+      "type": "string",
+      "const": "HydraAgentMac"
+    },
+    "collectedAtUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "device": { "$ref": "#/$defs/device" },
+    "software": { "$ref": "#/$defs/software" },
+    "network": { "$ref": "#/$defs/network" },
+    "security": { "$ref": "#/$defs/security" },
+    "sensitive": { "$ref": "#/$defs/sensitive" },
+    "errors": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "device": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "productName",
+        "productVersion",
+        "buildVersion",
+        "hardwareModel",
+        "cpuBrand",
+        "cpuCount",
+        "memoryBytes",
+        "disks",
+        "gpus",
+        "displays",
+        "battery"
+      ],
+      "properties": {
+        "productName": { "type": "string" },
+        "productVersion": { "type": "string" },
+        "buildVersion": { "type": "string" },
+        "hardwareModel": { "type": "string" },
+        "cpuBrand": { "type": "string" },
+        "cpuCount": { "type": "integer", "minimum": 0 },
+        "memoryBytes": { "type": "integer", "minimum": 0 },
+        "disks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["mountPoint", "totalBytes", "availableBytes"],
+            "properties": {
+              "mountPoint": { "type": "string" },
+              "totalBytes": { "type": "integer", "minimum": 0 },
+              "availableBytes": { "type": "integer", "minimum": 0 },
+              "fileSystem": { "type": "string" }
+            }
+          }
+        },
+        "gpus": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "displays": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["width", "height", "scaleFactor"],
+            "properties": {
+              "width": { "type": "integer", "minimum": 0 },
+              "height": { "type": "integer", "minimum": 0 },
+              "scaleFactor": { "type": "number", "exclusiveMinimum": 0 }
+            }
+          }
+        },
+        "battery": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["present"],
+          "properties": {
+            "present": { "type": "boolean" },
+            "chargePercentage": { "type": "integer", "minimum": 0, "maximum": 100 },
+            "isCharging": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "software": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["applications"],
+      "properties": {
+        "applications": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "version": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "network": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["interfaces"],
+      "properties": {
+        "interfaces": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "address", "family"],
+            "properties": {
+              "name": { "type": "string" },
+              "address": { "type": "string" },
+              "family": { "type": "string", "enum": ["ipv4", "ipv6"] }
+            }
+          }
+        },
+        "gateway": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["address"],
+          "properties": {
+            "address": { "type": "string" },
+            "interface": { "type": "string" }
+          }
+        },
+        "internetPing": { "$ref": "#/$defs/ping" },
+        "gatewayPing": { "$ref": "#/$defs/ping" },
+        "publicIp": { "type": "string" }
+      }
+    },
+    "ping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "reachable", "skipped"],
+      "properties": {
+        "target": { "type": "string" },
+        "reachable": { "type": "boolean" },
+        "latencyMs": { "type": "number", "minimum": 0 },
+        "skipped": { "type": "boolean" }
+      }
+    },
+    "security": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fileVaultEnabled": { "type": "boolean" },
+        "firewallEnabled": { "type": "boolean" }
+      }
+    },
+    "sensitive": {
+      "description": "Omitted entirely unless the user turns on sensitive data.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "userName": { "type": "string" },
+        "computerName": { "type": "string" },
+        "serialNumber": { "type": "string" },
+        "wifiSsid": { "type": "string" },
+        "location": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["latitude", "longitude"],
+          "properties": {
+            "latitude": { "type": "number" },
+            "longitude": { "type": "number" }
+          }
+        }
+      }
+    }
+  }
+}
