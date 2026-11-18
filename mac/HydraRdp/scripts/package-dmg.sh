@@ -105,9 +105,11 @@ cp "${APP}/Contents/Resources/Licenses/"* "${STAGE}/Licenses/"
 cat > "${STAGE}/Read Me.txt" <<'EOF'
 Hydra AVD Client
 
-1. Control-click Hydra AVD Client and choose Open. If macOS says the app is damaged, run this in Terminal and open it again:
+1. Copy Hydra AVD Client into Applications. macOS may say it cannot verify the app is free of malware. That check is about the missing Apple Developer signature, not a virus found in the app. Run this in Terminal, then open the app from Applications:
 
    xattr -dr com.apple.quarantine "/Applications/Hydra AVD Client.app"
+
+   If macOS still shows the warning, Control-click the app, choose Open, and confirm. On newer macOS the same approval is under System Settings, Privacy & Security, Open Anyway. A normal double-click keeps failing until the app is signed with an Apple Developer ID and notarized.
 
 2. Accept the license agreement. The same license texts are in the Licenses folder.
 3. Enter the Hydra client key from your administrator. It is saved in the Keychain on this Mac.
